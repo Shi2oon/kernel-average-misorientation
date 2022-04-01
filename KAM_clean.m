@@ -11,58 +11,66 @@ new_mat = misorient_mat;
 
 
 %Get the size of the matrix
-[row,col] = size(misorient_mat);
+[row,col,depth] = size(misorient_mat);
 
 %Initialize a matrix to hold the boundary positions
 boundary_mat = ones(row,col);
 
 for r = 1:row
     for c = 1:col
-        
-        %Set the undefined pixels to an averaged value
-        if misorient_mat(r,c)==-1
-            
-            avg_pixel = 0;
-            num_el = 0;
-            
-            if r+1<=row
-                avg_pixel = new_mat(r+1,c);
-                num_el = num_el + 1;
+        for d=1:depth
+            %Set the undefined pixels to an averaged value
+            if misorient_mat(r,c,d)==-1
+                
+                avg_pixel = 0;
+                num_el = 0;
+                
+                if r+1<=row
+                    avg_pixel = new_mat(r+1,c,d);
+                    num_el = num_el + 1;
+                end
+                
+                if r-1>=1
+                    avg_pixel = new_mat(r-1,c,d);
+                    num_el = num_el + 1;
+                end
+                
+                if c+1<=col
+                    avg_pixel = new_mat(r,c+1,d);
+                    num_el = num_el + 1;
+                end
+                
+                if c-1>=1
+                    avg_pixel = new_mat(r,c-1,d);
+                    num_el = num_el + 1;
+                end
+                
+                if d+1<=depth
+                    avg_pixel = new_mat(r,c+1,d);
+                    num_el = num_el + 1;
+                end
+                
+                if d-1>=1
+                    avg_pixel = new_mat(r,c-1,d);
+                    num_el = num_el + 1;
+                end
+                
+                new_mat(r,c,d) = (avg_pixel)/num_el;
             end
-
-            if r-1>=1
-                avg_pixel = new_mat(r-1,c);
-                num_el = num_el + 1;
-            end
-
-            if c+1<=col
-                avg_pixel = new_mat(r,c+1);
-                num_el = num_el + 1;
-            end
             
-            if c-1>=1
-                avg_pixel = new_mat(r,c-1);
-                num_el = num_el + 1;
+            %Construct a matrix of the boundaries - arbitrarily set to anything
+            %above 15 degrees misorientation. Note that this sort of boundary
+            %selection could also be used to highlight areas such as HAGBs,
+            %LAGB, or twins!
+            if misorient_mat(r,c,d)>15
+                boundary_mat(r,c,d) = 0;
             end
-            
-            new_mat(r,c) = (avg_pixel)/num_el;
         end
-        
-        %Construct a matrix of the boundaries - arbitrarily set to anything
-        %above 15 degrees misorientation. Note that this sort of boundary
-        %selection could also be used to highlight areas such as HAGBs,
-        %LAGB, or twins!
-        if misorient_mat(r,c)>15
-            boundary_mat(r,c) = 0;
-        end
-               
     end
 end
 
 %Output clean matrix
 clean_mat =new_mat;
-
-
 
 end
 

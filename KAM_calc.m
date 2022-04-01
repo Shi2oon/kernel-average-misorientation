@@ -1,4 +1,5 @@
-function [ nearest_neighbor_misorientation ] = KAM_calc(ebsd_data,xdim,ydim,orientation_matricies,neighbors)
+function [ nearest_neighbor_misorientation ] = ...
+    KAM_calc(ebsd_data,xdim,ydim,zdim,orientation_matricies,neighbors)
 %NEAREST_NEIGHBOR_MISORIENTATION is a function to calculate the
 %misorientation of the nearest "n" neighbors given an EBSD data file with imaging dimensions
 %and with the pixel locations and the acompanying orientation matrix file
@@ -16,7 +17,7 @@ n=neighbors;
 [totalrows,~] = size(ebsd_data);
 
 %Initialize a matrix to hold the resulting misorientation values
-nearest_neighbor_misorientation=zeros(xdim,ydim);
+nearest_neighbor_misorientation=zeros(xdim,ydim,zdim);
 
 %Begin timer
 tic
@@ -27,9 +28,9 @@ for i=1:totalrows
     %Print progress
     if rem(i,10000)==0
         fprintf('%.2f%% complete ', i/totalrows*100)
-    
+        
         time_elapsed = toc;
-    
+        
         perc_left = 1-i/totalrows;
         
         current_rate = (i/totalrows)/time_elapsed;
@@ -44,62 +45,72 @@ for i=1:totalrows
     %Extract the original x and y pixel locations for the pixel of interest
     orig_x = ebsd_data(i,3);
     orig_y = ebsd_data(i,4);
-   
+    orig_z = ebsd_data(i,5);
+    
     %Check to ensure the position is defined. If it is not, skip the
     %calculation (a pixel is undefined if Phase = 0)
     if ebsd_data(i,2)==0
-       nearest_neighbor_misorientation(i)=-1;
-       continue 
+        nearest_neighbor_misorientation(i)=-1;
+        continue
     end
-       
+    
     %Initialize a counter for the misorientation values
     misorient_counter=0;
     
     %Initialize a counter for misorientation calcs with an undefined pixel
     no_calc=0;
     
-    for y_pos=ebsd_data(i,4)-n:ebsd_data(i,4)+n %cycle through the y-positions
+    for z_pos=ebsd_data(i,5)-n:ebsd_data(i,5)+n %cycle through the y-positions
         
         %Continue out of the loop if the index exceeds the dimensions
-        if y_pos>ydim || y_pos<1
+        if z_pos>zdim || z_pos<1
             continue
-        end  
+        end
         
+        for y_pos=ebsd_data(i,4)-n:ebsd_data(i,4)+n %cycle through the y-positions
+            
+            %Continue out of the loop if the index exceeds the dimensions
+            if y_pos>ydim || y_pos<1
+                continue
+            end
+            
             for x_pos=ebsd_data(i,3)-n:ebsd_data(i,3)+n %Cycle through the x-positions
-
+                
                 %Continue out of loop if the index matches the original point
-                if y_pos==ebsd_data(i,4) && x_pos==ebsd_data(i,3)
+                if y_pos==ebsd_data(i,4) && x_pos==ebsd_data(i,3) && z_pos==ebsd_data(i,5)
                     continue
                 end
-
+                
                 %Continue out of the loop if the index exceeds the dimensions
                 if x_pos>xdim || x_pos<1
                     continue
                 end
-
-
-            
+                
                 %Double check to see if pixel being compared to has euler
                 %angles
-                if orientation_matricies{x_pos,y_pos}==0
+                if orientation_matricies{x_pos,y_pos,z_pos}==0
                     no_calc=no_calc+1;
                     continue
                 end
-            
-            
+                
+                
                 %Finally, add to the running tally of the misorientation
-                %counter            
-                misorient_counter = misorientation_calc(orientation_matricies{orig_x,orig_y},orientation_matricies{x_pos,y_pos})...
+                %counter
+                if ~isnan(sum(orientation_matricies{orig_x,orig_y,orig_z},'all'))
+                    1;
+                end
+                misorient_counter = misorientation_calc(orientation_matricies{...
+                    orig_x,orig_y,orig_z},orientation_matricies{x_pos,y_pos,z_pos})...
                     +misorient_counter;
-            
+                
             end
-    end
-
-        %Ensure the count is above zero then populate the resulting matrix
-        if misorient_counter~=0
-            nearest_neighbor_misorientation(orig_x,orig_y)=misorient_counter/((n+2)*(n+2)-1-no_calc);
         end
-
+    end        %Ensure the count is above zero then populate the resulting matrix
+    if misorient_counter~=0
+        nearest_neighbor_misorientation(orig_x,orig_y,orig_z)=...
+            misorient_counter/((n+2)*(n+2)-1-no_calc);
+    end
+    
 end
 
 end

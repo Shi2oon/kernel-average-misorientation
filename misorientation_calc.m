@@ -1,7 +1,7 @@
 function [misorientation ] = misorientation_calc(orient_mat1,orient_mat2 )
 %misorientation_calc is a function designed to calculate the
 %misorientation
-
+warning off
 %Define each cubic symmetry operator possible
 
 symmetry_operators{1} = [1 0 0;0 1 0;0 0 1];
@@ -44,10 +44,13 @@ for i=1:24
     if imag(x)==0
         misorient_vals(i) = x;
     end
+    if isnan(x)
+        misorient_vals(i) = 0;
+    end
 end
 
 %Select the minimnum misorientation
 misorientation = min(misorient_vals);
-
+warning on
 end
 

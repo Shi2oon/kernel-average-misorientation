@@ -1,4 +1,4 @@
-function [ orientation_matricies ] = euler_convert(ebsd_data, xdim, ydim)
+function [ orientation_matricies ] = euler_convert(ebsd_data, xdim, ydim, zdim)
 %Function to take the ebsd_data matrix and output a cell structure with the
 %corresponding orientation matricies for each position
 
@@ -7,9 +7,9 @@ fprintf("Converting to orientation matricies...\n")
 %Create an empty cell structure with the required length to hold the
 %respective orientation matricies
 
-totalrows =xdim*ydim; %Total rows
+totalrows =xdim*ydim*zdim; %Total rows
 
-orientation_matricies = cell(xdim,ydim); %Empty cells
+orientation_matricies = cell(xdim,ydim,zdim); %Empty cells
 
 %Cycle through a fill the cell structure
 for i = 1:totalrows
@@ -19,10 +19,11 @@ for i = 1:totalrows
         orientation_matricies{i}=0;
         continue
     end
+    
     %Extract the angles and convert from angular to radians 
-    phi1 = ebsd_data(i,5)*2*pi/360;
-    PHI = ebsd_data(i,6)*2*pi/360;
-    phi2 = ebsd_data(i,7)*2*pi/360;
+    phi1 = ebsd_data(i,6)*2*pi/360;
+    PHI = ebsd_data(i,7)*2*pi/360;
+    phi2 = ebsd_data(i,8)*2*pi/360;
    
     eul = [phi1, PHI, phi2]; %Contract into one variable
    
@@ -30,7 +31,7 @@ for i = 1:totalrows
     rotmatrix = euler2rotationmatrix(eul);
     
     %Populate the orientation_matricies cell structure
-    orientation_matricies{ebsd_data(i,3),ebsd_data(i,4)}=rotmatrix;   
+    orientation_matricies{ebsd_data(i,3),ebsd_data(i,4),ebsd_data(i,5)}=rotmatrix;   
 end
 
 end
